@@ -2,13 +2,16 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import "./MusicTuneVibe.sol";
 
-contract TuneVibe is ERC1155URIStorage, Ownable {
-    uint256 private _tokenIdCounts;
-    uint256 private listingFee = 0.001 ether;
+contract TuneVibe is ERC1155Holder {
+    uint256 marketFee = 250;
+    uint256 donationLimit = 0.005 ether;
+    IERC1155 music;
 
     address payable private _owner;
 
@@ -17,75 +20,49 @@ contract TuneVibe is ERC1155URIStorage, Ownable {
     event MusicNFTCreated(
         uint256 indexed tokenId,
         uint256 amount,
-        uint256 price,
-        address artirt,
-        address owner
+        uint256 price
     );
-
-    event BuyMusicNFT(uint256 indexed tokenId, uint256 amount, uint256 price);
 
     struct MusicNFT {
         uint256 tokenId;
         uint256 amount;
         uint256 price;
-        address payable artirt;
-        address payable owner;
+        address artirt;
     }
 
     mapping(uint256 => MusicNFT) private musicItem;
 
-    constructor(address payable owner) Ownable(owner) ERC1155("TuneVibe") {
-        _owner = owner;
+    event BuyMusicNFT(uint256 indexed tokenId, uint256 amount, uint256 price);
+
+    constructor(address _nftContract) {
+        music = IERC1155(_nftContract);
     }
 
-    function mint(
-        string memory tokenURI,
-        uint256 amount,
-        uint256 price
-    ) public payable returns (uint256) {
-        require(amount > 0, "Amount must be more than 0");
-        require(price >= 0, "Price must be more than 0");
-        _tokenIdCounts += 1;
-
-        _mint(msg.sender, _tokenIdCounts, amount, "");
-        _setURI(_tokenIdCounts, tokenURI);
-
-        CreatedMusicNFT(_tokenIdCounts, price, amount);
-
-        return _tokenIdCounts;
-    }
-
-    function CreatedMusicNFT(
+    function MakeMusicNFT(
         uint256 _tokenId,
         uint256 _price,
         uint256 _amount
     ) private {
         require(_price >= 0, "Price must be positive");
         require(
-            msg.value == listingFee,
+            msg.value == marketFee,
             "Your remain money must be at least equal to the listing fee"
         );
 
-        musicItem[_tokenId] = MusicNFT(
-            _tokenId,
-            _amount,
-            _price,
-            payable(msg.sender),
-            payable(address(this))
-        );
+        musicItem[_tokenId] = MusicNFT(_tokenId, _amount, _price, msg.sender);
 
-        safeTransferFrom(address(this), msg.sender, _tokenId, _amount, "");
-
-        emit MusicNFTCreated(
-            _tokenId,
-            _amount,
-            _price,
+        music.safeTransferFrom(
             msg.sender,
-            address(this)
+            address(this),
+            _tokenId,
+            _amount,
+            ""
         );
+
+        emit MusicNFTCreated(_tokenId, _amount, _price);
     }
     function getListingFee() public view returns (uint256) {
-        return listingFee;
+        return marketFee;
     }
 
     function buyNFT(uint256 tokenId, uint256 amount) external payable {
@@ -97,13 +74,20 @@ contract TuneVibe is ERC1155URIStorage, Ownable {
             msg.value >= salePrice,
             "Needs to be greater or equal to the price."
         );
-        safeTransferFrom(msg.sender, musicItem[tokenId].artirt, 0, price, "");
-        safeTransferFrom(msg.sender, address(this), 0, listingFee, "");
+
+        music.safeTransferFrom(
+            msg.sender,
+            musicItem[tokenId].artirt,
+            0,
+            salePrice,
+            ""
+        );
+        music.safeTransferFrom(msg.sender, address(this), 0, marketFee, "");
 
         musicItem[tokenId].amount -= amount;
 
-        safeTransferFrom(
-            musicItem[tokenId].owner,
+        music.safeTransferFrom(
+            address(this),
             msg.sender,
             musicItem[tokenId].tokenId,
             musicItem[tokenId].amount,
@@ -113,28 +97,18 @@ contract TuneVibe is ERC1155URIStorage, Ownable {
         emit BuyMusicNFT(tokenId, amount, price);
     }
 
-    function fetchItems() public view returns (MusicNFT[] memory) {
-        uint256 currentIndex = 0;
-
-        MusicNFT[] memory items = new MusicNFT[](_tokenIdCounts);
-        for (uint256 i = 0; i < _tokenIdCounts; i++) {
-            if (musicItem[i + 1].amount > 0) {
-                MusicNFT storage currentItem = musicItem[i + 1];
-                items[currentIndex] = currentItem;
-                currentIndex += 1;
-            }
-        }
-
-        return items;
-    }
-
     function reSale(
         uint256 _tokenId,
         uint256 _amount
     ) public payable returns (uint256) {
+        music.safeTransferFrom(
+            msg.sender,
+            address(this),
+            _tokenId,
+            _amount,
+            ""
+        );
         musicItem[_tokenId].amount += _amount;
-
-        safeTransferFrom(address(this), msg.sender, _tokenId, _amount, "");
 
         return _tokenId;
     }
@@ -145,11 +119,11 @@ contract TuneVibe is ERC1155URIStorage, Ownable {
         return musicItem[tokenId];
     }
 
-    function withdraw() public payable {
-        require(msg.sender == _owner, "You aren't the owner");
+    // function withdraw() public payable {
+    //     require(msg.sender == _owner, "You aren't the owner");
 
-        emit Withdrawal(address(this).balance, block.timestamp);
+    //     emit Withdrawal(address(this).balance, block.timestamp);
 
-        _owner.transfer(address(this).balance);
-    }
+    //     _owner.transfer(address(this).balance);
+    // }
 }
