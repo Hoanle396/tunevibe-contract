@@ -9,8 +9,7 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "./MusicTuneVibe.sol";
 
 contract TuneVibe is ERC1155Holder {
-    uint256 marketFee = 250;
-    uint256 donationLimit = 0.005 ether;
+    uint256 marketFee = 0.005 ether;
     IERC1155 music;
 
     address payable private _owner;

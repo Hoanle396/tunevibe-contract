@@ -36,7 +36,10 @@ contract MusicTuneVibe is ERC1155, Ownable {
         return string(abi.encodePacked(IPFS_PATH, musics[tokenId].uri));
     }
 
-    function safeMint(string memory _token, uint256 amount) public {
+    function safeMint(
+        string memory _token,
+        uint256 amount
+    ) public view returns (uint256) {
         require(!_tokenExists[_token], "The token URI should be unique");
 
         tokens.push(_token);
@@ -44,11 +47,10 @@ contract MusicTuneVibe is ERC1155, Ownable {
         _mint(msg.sender, _id, amount, "");
         musics[_id] = Music(_id, _token);
         _tokenExists[_token] = true;
+        return _id
     }
 
-    function music(
-        uint256 _tokenId
-    ) public view returns (Music memory) {
+    function music(uint256 _tokenId) public view returns (Music memory) {
         return musics[_tokenId];
     }
 }
