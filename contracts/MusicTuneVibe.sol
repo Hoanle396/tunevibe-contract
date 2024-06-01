@@ -39,7 +39,7 @@ contract MusicTuneVibe is ERC1155, Ownable {
     function safeMint(
         string memory _token,
         uint256 amount
-    ) public view returns (uint256) {
+    ) public returns (uint256) {
         require(!_tokenExists[_token], "The token URI should be unique");
 
         tokens.push(_token);
@@ -47,7 +47,7 @@ contract MusicTuneVibe is ERC1155, Ownable {
         _mint(msg.sender, _id, amount, "");
         musics[_id] = Music(_id, _token);
         _tokenExists[_token] = true;
-        return _id
+        return _id;
     }
 
     function music(uint256 _tokenId) public view returns (Music memory) {
