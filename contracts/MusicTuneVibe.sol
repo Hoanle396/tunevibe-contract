@@ -53,4 +53,24 @@ contract MusicTuneVibe is ERC1155, Ownable {
     function music(uint256 _tokenId) public view returns (Music memory) {
         return musics[_tokenId];
     }
+    function memcmp(
+        bytes memory a,
+        bytes memory b
+    ) internal pure returns (bool) {
+        return (a.length == b.length) && (keccak256(a) == keccak256(b));
+    }
+
+    function tokenByHash(
+        string memory _hash
+    ) public view returns (Music memory) {
+        require(_tokenExists[_hash], "The token URI should be mint");
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            if (memcmp(bytes(musics[i + 1].uri), bytes(_hash))) {
+                return musics[i + 1];
+            }
+        }
+        Music memory emptyPropertyObj;
+        return emptyPropertyObj;
+    }
 }

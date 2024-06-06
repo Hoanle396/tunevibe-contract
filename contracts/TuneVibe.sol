@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "./MusicTuneVibe.sol";
 
 contract TuneVibe is ERC1155Holder {
-    uint256 marketFee = 0.005 ether;
+    uint256 marketFee = 0 ether;
     IERC1155 music;
 
     address payable private _owner;
@@ -34,6 +34,7 @@ contract TuneVibe is ERC1155Holder {
     event BuyMusicNFT(uint256 indexed tokenId, uint256 amount, uint256 price);
 
     constructor(address _nftContract) {
+        _owner = payable(msg.sender);
         music = IERC1155(_nftContract);
     }
 
@@ -41,22 +42,17 @@ contract TuneVibe is ERC1155Holder {
         uint256 _tokenId,
         uint256 _price,
         uint256 _amount
-    ) private {
+    ) public payable {
         require(_price >= 0, "Price must be positive");
         require(
             msg.value == marketFee,
             "Your remain money must be at least equal to the listing fee"
         );
 
+        payable(_owner).transfer(marketFee)
         musicItem[_tokenId] = MusicNFT(_tokenId, _amount, _price, msg.sender);
 
-        music.safeTransferFrom(
-            msg.sender,
-            address(this),
-            _tokenId,
-            _amount,
-            ""
-        );
+        music.safeTransferFrom(msg.sender, address(0), _tokenId, _amount, "");
 
         emit MusicNFTCreated(_tokenId, _amount, _price);
     }
