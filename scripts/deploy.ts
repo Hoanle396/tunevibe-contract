@@ -2,10 +2,7 @@ import { ethers } from "hardhat";
 
 async function main() {
   const MusicTuneVibe = await ethers.getContractFactory("MusicTuneVibe");
-  const musicTuneVibe = await MusicTuneVibe.deploy(
-    "http://localhost:3000/",
-    "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"
-  );
+  const musicTuneVibe = await MusicTuneVibe.deploy("http://localhost:3000/");
 
   await musicTuneVibe.waitForDeployment();
 
@@ -13,12 +10,12 @@ async function main() {
 
   // For MarketPlace
 
-  const Marketplace = await ethers.getContractFactory("TuneVibe");
-  const marketplace = await Marketplace.deploy(musicTuneVibe.target);
+  // const Marketplace = await ethers.getContractFactory("TuneVibe");
+  // const marketplace = await Marketplace.deploy(musicTuneVibe.target);
 
-  await marketplace.waitForDeployment();
+  // await marketplace.waitForDeployment();
 
-  console.log("Marketplace deployed to:", marketplace.target);
+  // console.log("Marketplace deployed to:", marketplace.target);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
