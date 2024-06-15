@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 
 contract MusicTuneVibe is ERC1155, Ownable {
-        string[] public tokens;
+    string[] public tokens;
     string IPFS_PATH;
     address private _owner;
     uint256 marketFee = 0 ether;
@@ -36,9 +36,7 @@ contract MusicTuneVibe is ERC1155, Ownable {
 
     mapping(uint256 => Music) private musics;
 
-    constructor(
-        string memory _ipfs
-    ) ERC1155("") Ownable() {
+    constructor(string memory _ipfs) ERC1155("") Ownable() {
         IPFS_PATH = _ipfs;
         _owner = msg.sender;
     }
@@ -69,13 +67,7 @@ contract MusicTuneVibe is ERC1155, Ownable {
         musics[_id] = Music(_id, _token, _amount, _price, msg.sender);
         _tokenExists[_token] = true;
 
-        emit MusicNFTCreated(
-            _id,
-            _token,
-            _amount,
-            _price,
-            address(msg.sender)
-        );
+        emit MusicNFTCreated(_id, _token, _amount, _price, address(msg.sender));
     }
 
     function music(uint256 _tokenId) public view returns (Music memory) {
@@ -106,28 +98,20 @@ contract MusicTuneVibe is ERC1155, Ownable {
         return marketFee;
     }
 
-    function buyNFT(uint256 tokenId, uint256 amount) external payable {
+    function buyNFT(uint256 tokenId, uint256 amount) public payable {
         uint256 price = musics[tokenId].price;
 
         uint256 salePrice = price * amount;
         require(musics[tokenId].amount >= amount, "ko du nft");
         require(
-            msg.value >= salePrice,
+            msg.value == salePrice,
             "Needs to be greater or equal to the price."
         );
 
-        safeTransferFrom(
-            msg.sender,
-            musics[tokenId].artirt,
-            0,
-            salePrice,
-            ""
-        );
-        safeTransferFrom(msg.sender, address(this), 0, marketFee, "");
-
+        payable(musics[tokenId].artirt).transfer(salePrice);
         musics[tokenId].amount -= amount;
 
-        onERC1155Received(address(this), msg.sender, tokenId, amount, "");
+        onERC1155Received(msg.sender, address(this), tokenId, amount, "");
         safeTransferFrom(
             address(this),
             msg.sender,
@@ -138,7 +122,7 @@ contract MusicTuneVibe is ERC1155, Ownable {
 
         emit BuyMusicNFT(tokenId, amount, price);
     }
-function onERC1155Received(
+    function onERC1155Received(
         address,
         address,
         uint256,
