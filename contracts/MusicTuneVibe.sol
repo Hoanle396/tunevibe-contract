@@ -63,7 +63,8 @@ contract MusicTuneVibe is ERC1155, Ownable {
 
         tokens.push(_token);
         uint256 _id = tokens.length;
-        _mint(address(this), _id, _amount, "");
+         _mint(msg.sender, _id, _amount, "");
+        setApprovalForAll(address(this), true);
         musics[_id] = Music(_id, _token, _amount, _price, msg.sender);
         _tokenExists[_token] = true;
 
@@ -111,9 +112,9 @@ contract MusicTuneVibe is ERC1155, Ownable {
         payable(musics[tokenId].artirt).transfer(salePrice);
         musics[tokenId].amount -= amount;
 
-        onERC1155Received(msg.sender, address(this), tokenId, amount, "");
+        onERC1155Received(musics[tokenId].artirt ,msg.sender, tokenId, amount, "");
         safeTransferFrom(
-            address(this),
+            musics[tokenId].artirt,
             msg.sender,
             musics[tokenId].tokenId,
             musics[tokenId].amount,
